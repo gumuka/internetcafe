@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+ <div class="min-h-screen bg-[#313647] flex items-center justify-center p-6 relative overflow-hidden">
+  
+  <div class="bg-white rounded-sm shadow-2xl w-[90%] max-w-[1200px] h-[85vh] p-12 relative flex flex-col">
+    <a href="{{ url_for('admin_home') }}" class="absolute top-10 right-10 text-4xl text-gray-400 hover:text-[#6B62C4] transition-colors">←</a>
+    
+    <form method="POST" action="{{ url_for('admin_addtime') }}" id="addtimeForm" class="flex flex-col h-full">
+      
+      <div class="flex items-center space-x-4 mb-8 border-b-2 pb-6">
+        <div class="bg-black rounded-full p-2">
+          <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <input type="text" name="username" placeholder="กรอก Username ของลูกค้า..." required
+               class="text-2xl font-bold italic text-[#313647] border-none outline-none w-full bg-transparent placeholder-gray-300">
+      </div>
+
+      <input type="hidden" name="minutes" id="selectedMinutes" value="">
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div class="mb-4 text-center text-red-500 font-bold text-lg">{{ messages[0] }}</div>
+        {% endif %}
+      {% endwith %}
+
+      <div class="grid grid-cols-3 gap-8 flex-grow items-center content-center">
+        <div onclick="selectTime(30, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">30 Minute</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">20 Baht</div>
+        </div>
+
+        <div onclick="selectTime(60, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">1 Hour</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">40 Baht</div>
+        </div>
+
+        <div onclick="selectTime(90, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">1:30 Hour</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">60 Baht</div>
+        </div>
+
+        <div onclick="selectTime(120, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">2 Hours</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">80 Baht</div>
+        </div>
+
+        <div onclick="selectTime(150, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">2:30 Hours</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">100 Baht</div>
+        </div>
+
+        <div onclick="selectTime(180, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
+          <div class="text-2xl font-black text-[#313647]">3 Hour</div>
+          <div class="text-sm font-bold text-gray-400 mt-2 uppercase">120 Baht</div>
+        </div>
+      </div>
+
+      <div class="flex justify-center mt-12">
+        <button type="submit" onclick="return checkSelection()" class="bg-[#313647] text-white px-24 py-4 rounded-lg text-xl font-black hover:bg-[#6B62C4] transition-colors uppercase shadow-md">
+          OK
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  function selectTime(minutes, element) {
+    // 1. ล้างสีขอบทุกกล่องให้เป็นปกติก่อน
+    document.querySelectorAll('.time-box').forEach(box => {
+      box.classList.remove('border-[#6B62C4]', 'bg-indigo-50');
+      box.classList.add('border-gray-100');
+    });
+    
+    // 2. ไฮไลต์กล่องที่แอดมินเพิ่งคลิก
+    element.classList.remove('border-gray-100');
+    element.classList.add('border-[#6B62C4]', 'bg-indigo-50');
+
+    // 3. เอาค้านาทีไปใส่ไว้ในช่อง Input ที่ซ่อนอยู่ (เตรียมส่งให้ Python)
+    document.getElementById('selectedMinutes').value = minutes;
+  }
+
+  // ดักไว้เผื่อแอดมินลืมเลือกเวลาก่อนกด OK
+  function checkSelection() {
+    let minutes = document.getElementById('selectedMinutes').value;
+    if (minutes === "") {
+      alert("กรุณาเลือกเวลาก่อนกดยืนยันครับ!");
+      return false; // ห้ามฟอร์มส่งข้อมูล
+    }
+    return true; // ยอมให้ฟอร์มทำงาน
+  }
+</script>
+</body>
+</html>

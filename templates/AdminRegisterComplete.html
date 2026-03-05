@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="min-h-screen bg-[#313647] flex items-center justify-center p-6">
+    <div class="bg-white rounded-sm shadow-2xl w-[90%] max-w-[1000px] h-[80vh] p-12 relative flex flex-col items-center justify-center">
+      
+      <a href="{{ url_for('admin_home') }}" class="absolute top-10 right-10 text-4xl text-gray-400 hover:text-[#6B62C4]">←</a>
+      
+      <div class="bg-black rounded-full p-6 mb-12 shadow-lg">
+        <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin_register') }}" class="w-full max-w-xl space-y-6 text-center">
+        <input type="text" name="username" placeholder="Username" required 
+               class="w-full bg-[#9da3af] placeholder-gray-200 py-5 px-8 text-xl italic text-white outline-none rounded-sm">
+        
+        <input type="password" name="password" placeholder="Password" required 
+               class="w-full bg-[#9da3af] placeholder-gray-200 py-5 px-8 text-xl italic text-white outline-none rounded-sm">
+        
+        <input type="text" name="phone" placeholder="Tel" required 
+               class="w-full bg-[#9da3af] placeholder-gray-200 py-5 px-8 text-xl italic text-white outline-none rounded-sm">
+        
+        <div class="flex justify-center pt-10">
+          <button type="submit" class="bg-[#313647] text-white px-24 py-4 rounded-full text-xl font-bold hover:bg-[#6B62C4] shadow-lg transition-all">
+            Confirm
+          </button>
+        </div>
+      </form>
+
+      {% if success %}
+      <div class="fixed inset-0 bg-black/60 z-40"></div>
+      <div class="fixed inset-0 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-10 flex flex-col items-center max-w-sm w-full shadow-2xl scale-100 opacity-100 transition-all">
+          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+              <path d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-[#313647] mb-2">ทำรายการสำเร็จ</h3>
+          <p class="text-gray-500 mb-8 text-center">สมัครสมาชิกเรียบร้อยแล้ว!</p>
+          <a href="{{ url_for('admin_home') }}" class="w-full">
+            <button type="button" class="w-full bg-[#313647] text-white py-3 px-4 rounded-md font-bold hover:bg-[#6B62C4] transition-colors">
+              ปิดหน้าต่าง
+            </button>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</body>
+</html>

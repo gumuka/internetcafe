@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* 🌟 แก้ Error เส้นแดงเหมือนเดิม แต่หน้าตาเป๊ะตามเพื่อน */
+        .hero-bg {
+            background-image: url('{{ url_for("static", filename="image/bg1.png") }}');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-200">
+
+<nav class="absolute top-0 left-0 w-full z-20 text-white">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-10 py-6">
+        <h1 class="text-2xl font-semibold italic">InternetCafé</h1>
+        <div class="space-x-8 underline underline-offset-4">
+            <a href="/profile">Me</a>
+            <a href="/dashboard">Home</a>
+            <a href="/credit">Credit</a>
+            <a href="/contact">Contact</a>
+        </div>
+    </div>
+</nav>
+
+<section class="relative h-[350px] flex items-center justify-center text-white hero-bg">
+    <div class="absolute inset-0 bg-blue-900/70"></div>
+    <h2 class="relative text-5xl font-bold">
+        Contact Us
+    </h2>
+</section>
+
+<section class="max-w-5xl mx-auto py-20 px-10 text-gray-800">
+    
+    <div class="bg-white shadow-2xl rounded-3xl p-12 md:p-16 border border-gray-100">
+        
+        <div class="text-2xl font-bold text-blue-900 mb-10 border-l-8 border-blue-600 pl-6 leading-relaxed">
+            We’re here to help, just get in touch anytime you need support.
+        </div>
+
+        <div class="text-xl space-y-6 leading-relaxed mb-16 text-gray-700">
+            <p>Let us know if you have any questions or concerns.</p>
+            <p>Contact us anytime :</p>
+            
+            <div class="space-y-4 bg-gray-50 p-6 rounded-2xl border border-gray-200">
+                <p>
+                    <span class="font-bold text-gray-800">Our Facebook Page :</span>
+                    <a href="https://www.facebook.com/computing.kku" target="_blank" class="text-blue-600 underline hover:text-blue-800 transition">
+                        https://www.facebook.com/computing.kku
+                    </a>
+                </p>
+
+                <p>
+                    <span class="font-bold text-gray-800">Our Email :</span>
+                    <a href="mailto:TheInternetCafe@gmail.com?subject=Contact from Website" class="text-blue-600 underline hover:text-blue-800 transition">
+                        TheInternetCafe@gmail.com
+                    </a>
+                </p>
+            </div>
+        </div>
+
+        <hr class="mb-16 border-gray-200">
+
+        <div class="max-w-2xl mx-auto">
+            <h4 class="text-3xl font-black text-center mb-8 text-gray-800 uppercase italic">
+                Send us a message
+            </h4>
+
+            <form id="contactForm" class="space-y-6">
+                <textarea name="message" required
+                    class="w-full border-2 border-gray-200 rounded-2xl p-6 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition text-lg"
+                    rows="5"
+                    placeholder="Write your message here..."></textarea>
+
+                <div class="text-center">
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-full text-xl font-bold shadow-xl transition-all hover:scale-105 active:scale-95">
+                        SEND MESSAGE
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div> </section>
+
+<script>
+document.getElementById("contactForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    let message = document.querySelector("textarea[name='message']").value;
+
+    fetch("/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === "success") {
+            Swal.fire({
+                icon: 'success',
+                title: 'ส่งข้อความสำเร็จ!',
+                text: 'ทีมงานได้รับเรื่องแล้ว และจะตรวจสอบโดยเร็วที่สุด',
+                confirmButtonColor: '#2563eb',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    title: 'font-bold'
+                }
+            });
+            document.querySelector("textarea[name='message']").value = "";
+        }
+    });
+});
+</script>
+
+</body>
+</html>

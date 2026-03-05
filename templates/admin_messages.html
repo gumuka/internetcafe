@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Customer Messages</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-10 relative">
+
+
+    <!-- Back Button -->
+<a href="{{ url_for('admin_home') }}" 
+   class="absolute top-8 left-8 flex items-center gap-2 text-gray-600 hover:text-black transition">
+
+    <!-- Arrow Icon -->
+    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M15 18l-6-6 6-6"/>
+    </svg>
+
+    <span class="font-semibold">Back</span>
+</a>
+    <h1 class="text-3xl font-bold mb-6 text-center">
+        📩 ข้อความจากลูกค้า 
+    </h1>
+
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6">
+
+        {% if messages %}
+        
+            {% for msg in messages %}
+<div class="border-b py-6 flex justify-between items-start">
+
+    <div class="flex items-start gap-4">
+
+        <!-- Avatar Minimal -->
+        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
+            {{ msg[1][0]|upper }}
+        </div>
+
+        <div>
+            <p class="font-semibold text-gray-800">
+                {{ msg[1] }}
+            </p>
+
+            <p class="text-gray-600 mt-1">
+                {{ msg[2] }}
+            </p>
+
+            <p class="text-xs text-gray-400 mt-2">
+                {{ msg[3] }}
+            </p>
+        </div>
+
+    </div>
+
+    <div>
+        <a href="{{ url_for('delete_message', msg_id=msg[0]) }}"
+           class="bg-gray-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition">
+           ลบ
+        </a>
+    </div>
+
+</div>
+{% endfor %}
+
+        {% else %}
+            <p class="text-center text-gray-500">
+                ยังไม่มีข้อความจากลูกค้า
+            </p>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

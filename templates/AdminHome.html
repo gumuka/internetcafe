@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+<div class="min-h-screen bg-[#313647] flex items-center justify-center p-6">
+  <div class="bg-white rounded-sm shadow-2xl w-[95%] max-w-[1600px] h-[85vh] p-12 relative flex flex-col items-center justify-center">
+    
+    <a href="{{ url_for('logout') }}" class="absolute top-10 right-10">
+        <button class="text-4xl text-gray-400 hover:text-[#FF0000] transition-colors font-bold">Log out</button>
+    </a>
+
+    <a href="{{ url_for('admin_messages') }}" class="absolute top-10 left-10">
+    <div class="flex items-center gap-3 text-gray-400 hover:text-[#6B62C4] transition-colors cursor-pointer">
+        <div class="bg-black rounded-full p-3 shadow-lg">
+            <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v14l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+        </div>
+        <span class="text-2xl font-bold">Messages</span>
+    </div>
+    </a>
+
+    <div class="flex flex-col items-center mb-16">
+      <div class="bg-black rounded-full p-4 mb-4 shadow-lg">
+        <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+      </div>
+      <h2 class="text-3xl font-bold italic text-[#313647]">@{{ username }} (Admin)</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full max-w-7xl">
+      
+      <a href="{{ url_for('admin_addtime') }}" class="block">
+        <div class="bg-[#313647] rounded-3xl p-10 flex flex-col items-center cursor-pointer hover:bg-[#6B62C4] transform hover:scale-105 transition-all text-white shadow-xl h-full">
+          <div class="bg-black rounded-full w-20 h-20 flex items-center justify-center mb-6 text-4xl font-bold">$</div>
+          <span class="text-3xl font-black italic">Top Up</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('admin_register') }}" class="block">
+        <div class="bg-[#313647] rounded-3xl p-10 flex flex-col items-center cursor-pointer hover:bg-green-600 transform hover:scale-105 transition-all text-white shadow-xl h-full">
+          <div class="bg-black rounded-full w-20 h-20 flex items-center justify-center mb-6">
+            <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <span class="text-3xl font-black italic text-center">Register</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('admin_user_edit') }}" class="block">
+        <div class="bg-[#313647] rounded-3xl p-10 flex flex-col items-center cursor-pointer hover:bg-orange-500 transform hover:scale-105 transition-all text-white shadow-xl h-full">
+          <div class="bg-black rounded-full w-20 h-20 flex items-center justify-center mb-6">
+            <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </div>
+          <span class="text-3xl font-black italic text-center">Edit User</span>
+        </div>
+      </a>
+
+      <a href="{{ url_for('status') }}" class="block">
+        <div class="bg-[#313647] rounded-3xl p-10 flex flex-col items-center cursor-pointer hover:bg-blue-600 transform hover:scale-105 transition-all text-white shadow-xl h-full">
+          <div class="bg-black rounded-full w-20 h-20 flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <span class="text-3xl font-black italic text-center">Monitor</span>
+        </div>
+      </a>
+
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Internet Café</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .box-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* ===== แมว ===== */
+        .cat-container {
+            position: absolute;
+            top: -80px;
+            right: 20px;
+            width: 150px;
+            z-index: 50;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* ลอยเบา ๆ */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* หางแกว่ง */
+        .tail {
+            transform-origin: top left;
+            animation: wag 1.3s ease-in-out infinite;
+        }
+
+        @keyframes wag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(18deg); }
+        }
+
+        /* กระพริบตา */
+        .eye {
+            transform-origin: center;
+            animation: blink 4s infinite;
+        }
+
+        @keyframes blink {
+            0%, 92%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        /* อนิเมชั่นแจ้งเตือน Flash Message */
+        @keyframes bounce-short { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-5px); } 
+        }
+        .animate-bounce-short { 
+            animation: bounce-short 0.5s ease-in-out 1; 
+        }
+    </style>
+</head>
+
+<body class="bg-gray-300 flex items-center justify-center min-h-screen">
+
+    <div class="box-wrapper">
+
+        <div class="cat-container">
+            <svg viewBox="0 0 200 200">
+                <path class="tail" d="M150 120 Q190 100 170 165" stroke="#c2410c" stroke-width="14" fill="none" stroke-linecap="round"/>
+                <ellipse cx="100" cy="120" rx="45" ry="35" fill="#fb923c"/>
+                <path d="M75 120 Q100 100 125 120" stroke="#c2410c" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <path d="M80 135 Q100 120 120 135" stroke="#c2410c" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <circle cx="100" cy="80" r="35" fill="#fb923c"/>
+                <path d="M85 70 Q100 60 115 70" stroke="#c2410c" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <polygon points="75,55 90,25 105,60" fill="#fb923c"/>
+                <polygon points="95,60 110,25 125,55" fill="#fb923c"/>
+                <polygon points="85,50 92,35 100,55" fill="#fdba74"/>
+                <polygon points="100,55 108,35 115,50" fill="#fdba74"/>
+                <circle class="eye" cx="88" cy="78" r="6" fill="#1f2937"/>
+                <circle class="eye" cx="112" cy="78" r="6" fill="#1f2937"/>
+                <polygon points="100,90 94,98 106,98" fill="#f472b6"/>
+                <path d="M100 98 Q94 104 88 100" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M100 98 Q106 104 112 100" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M70 85 Q85 80 95 85" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M70 95 Q85 92 95 92" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M105 85 Q115 80 130 85" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M105 92 Q115 92 130 95" stroke="#7c2d12" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-2xl flex w-[1100px] overflow-hidden">
+            
+            <div class="w-1/2 p-24 bg-gray-200">
+                <h2 class="text-3xl font-bold mb-8">
+                    Welcome To <br> Internet Café
+                </h2>
+
+                {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="w-full max-w-md mx-auto mb-4 space-y-3 relative z-50">
+      {% for message in messages %}
+        {% if "สำเร็จ" in message or "✅" in message %}
+          <div class="flex items-center p-3 bg-green-50 border-b-4 border-green-500 rounded-xl shadow-sm animate-bounce-short">
+            <p class="text-sm font-bold text-green-800">✅ {{ message }}</p>
+          </div>
+        {% else %}
+          <div class="flex items-center p-3 bg-red-50 border-b-4 border-red-500 rounded-xl shadow-sm animate-bounce-short">
+            <p class="text-sm font-bold text-red-800">❌ {{ message }}</p>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+                <form method="POST">
+
+                    <div class="mb-6">
+                        <label class="block mb-2 font-medium">Username</label>
+                        <input type="text" name="username"
+                            class="w-full p-3 rounded-lg shadow-md border focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="block mb-2 font-medium">Password</label>
+                        <input type="password" name="password"
+                            class="w-full p-3 rounded-lg shadow-md border focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            required>
+                    </div>
+
+                    <div class="text-center mb-6">
+                        <a href="{{ url_for('forgot_password') }}" 
+                           class="text-sm text-indigo-500 hover:text-indigo-800 hover:underline">
+                           Forgot Password?
+                        </a>
+                    </div>
+
+                    <button class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition duration-300">
+                        Log in
+                    </button>
+
+                </form>
+            </div>
+
+            <div class="w-1/2 bg-gray-50 flex items-center justify-center">
+                <img src="{{ url_for('static', filename='image/login.png') }}" 
+                     alt="login"
+                     class="w-full h-full object-cover">
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>

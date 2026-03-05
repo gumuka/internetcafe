@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Top Up</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 🌟 ย้ายพื้นหลังมาไว้ตรงนี้เพื่อแก้ Error เส้นแดงครับ */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: url("{{ url_for('static', filename='image/bg1.png') }}");
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="relative">
+    <div class="absolute inset-0 bg-black/30 -z-10"></div>
+
+    <div class="relative z-10 flex flex-col min-h-screen">
+        <header class="bg-black/50 backdrop-blur-md text-white px-10 py-6 relative">
+            <h1 class="text-xl font-semibold absolute left-10 top-6">
+                Internet Café
+            </h1>
+
+            <nav class="flex justify-center space-x-6">
+                <a href="/dashboard" class="hover:underline">Home</a>
+                <a href="/credit" class="underline">Credit</a>
+                <a href="/contact" class="hover:underline">About</a>
+            </nav>
+        </header>
+
+        <div class="flex-1 flex justify-center items-start pt-20 pb-10">
+            <div class="bg-gray-200 w-full max-w-5xl rounded-3xl p-12 shadow-2xl relative">
+                <a href="/dashboard" 
+                   class="absolute top-6 left-8 text-2xl text-gray-700 hover:text-purple-600 transition font-bold">
+                    ←
+                </a>
+
+                <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">
+                    Credit top up Station
+                </h2>
+
+                <hr class="mb-10 border-gray-400">
+
+                <form method="POST">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="30min" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">30 Minute</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">20 BAHT</p>
+                        </label>
+
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="1hour" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">1 Hour</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">40 BAHT</p>
+                        </label>
+
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="1_30" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">1:30 Hour</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">60 BAHT</p>
+                        </label>
+
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="2hour" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">2 Hour</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">80 BAHT</p>
+                        </label>
+
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="2_30" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">2:30 Hour</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">100 BAHT</p>
+                        </label>
+
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="package" value="3hour" class="hidden peer">
+                            <div class="w-3/4 mx-auto border border-gray-600 rounded-2xl py-6 transition group-hover:scale-105 duration-200 peer-checked:bg-purple-300 peer-checked:border-purple-600">
+                                <p class="text-2xl font-semibold text-purple-600">3 Hour</p>
+                            </div>
+                            <p class="mt-4 font-bold text-gray-700">120 BAHT</p>
+                        </label>
+                    </div>
+
+                    <div class="text-center mt-12">
+                        <button class="bg-purple-600 text-white px-12 py-4 text-lg font-semibold rounded-xl shadow-lg hover:bg-purple-700 hover:scale-105 transition duration-200">
+                            Done
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

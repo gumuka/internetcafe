@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen flex justify-center items-center bg-gray-700">
+
+<div class="bg-gray-200 w-full max-w-6xl rounded-3xl p-14 shadow-2xl text-center">
+
+    <h2 class="text-3xl font-bold mb-6">
+        Payment Station
+    </h2>
+
+    <!-- เส้นคั่นสั้น ไม่สุด -->
+    <div class="flex justify-center mb-6">
+        <div class="w-3/4 h-[2px] bg-gray-400"></div>
+    </div>
+
+    <h3 class="text-xl font-semibold mb-6">
+        กรุณาชำระเงิน
+    </h3>
+
+    <!-- QR Image -->
+<div class="flex justify-center mb-8">
+    <img src="{{ url_for('view_qr', qr_name=qr_name) }}"
+         class="w-72 rounded-lg shadow-lg border-[0.5px] border-black">
+</div>
+
+    <p class="text-xl font-bold">
+        Credit : {{ hour_text }}
+    </p>
+
+    <p class="text-xl mt-3">
+        ยอดชำระ : {{ price }} บาท
+    </p>
+
+    <div class="mt-10">
+    <button onclick="confirmPayment()"
+       class="bg-gray-400 px-10 py-3 rounded-lg shadow-md hover:bg-gray-500 transition">
+        DONE
+    </button>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+function confirmPayment() {
+    Swal.fire({
+        icon: 'success',
+        title: 'ชำระเงินสำเร็จ!',
+        text: 'ระบบได้รับการชำระเงินเรียบร้อยแล้ว',
+        width: 600,
+        padding: '0.8rem',
+        confirmButtonColor: '#2563eb',
+        backdrop: 'rgba(0, 0, 0, 0.6)',
+        customClass: {
+            popup: 'rounded-2xl',
+            title: 'text-xl',
+            confirmButton: 'px-6 py-2 rounded-lg'
+        }
+    }).then(() => {
+        // 🌟 แก้ตรงนี้! สั่งให้วิ่งไปที่เส้นทาง confirm_payment ของ Python พร้อมส่งค่าราคาไปบวกเวลา
+        window.location.href = "/confirm_payment/{{ price }}";
+    });
+}
+</script>
+</body>
+</html>
