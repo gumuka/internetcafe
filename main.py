@@ -140,7 +140,7 @@ def update_member_time():
 
 # ==========================================
 # 🏠 เส้นทางหน้าเว็บ (Routes)
-# ==========================================
+# ========= =================================
 
 @app.route("/")
 def home():
@@ -529,37 +529,54 @@ def change_password():
 def forgot_password():
     show_reset_form = session.get('can_reset_password', False)
     if request.method == 'POST':
+        # --- ส่วนที่ 1: ตรวจสอบเบอร์โทรและส่ง OTP ---
         if "phone" in request.form:
-            phone = request.form['phone']
+            phone_input = request.form['phone'].strip()
+            
             connect = sqlite3.connect(db_local)
             cursor = connect.cursor()
-            cursor.execute("SELECT Person_ID FROM Member WHERE Phone_Number = ?", (phone,))
+            # ค้นหาว่าเบอร์นี้เป็นของใคร (เชื่อมฐานข้อมูลตรงนี้ครับ)
+            cursor.execute("SELECT Person_ID FROM Member WHERE Phone_Number = ?", (phone_input,))
             member = cursor.fetchone()
             connect.close()
+            
             if member:
+                # ✅ ถ้าเจอเบอร์ใน DB ให้สร้าง OTP และโชว์บนหน้าเว็บ
                 otp = random.randint(100000, 999999)
-                session['otp'], session['phone'], session['reset_person_id'] = str(otp), phone, member[0]
-                print("OTP คือ:", otp)
-                flash("✅ OTP ถูกส่งแล้ว (ดูใน Terminal)")
+                session['otp'] = str(otp)
+                session['phone'] = phone_input
+                session['reset_person_id'] = member[0]
+                
+                flash(f"✅ พบข้อมูลสมาชิก! OTP คือ: {otp}", "success")
                 return redirect(url_for('forgot_password'))
-            flash("❌ ไม่พบเบอร์โทรศัพท์")
+            else:
+                # ❌ ถ้าไม่เจอ ให้แจ้งเตือนและไม่ส่ง OTP
+                flash(f"❌ ไม่พบเบอร์โทร {phone_input} ในระบบ", "danger")
+                return redirect(url_for('forgot_password'))
+        
+        # --- ส่วนที่ 2: ตรวจสอบ OTP ที่ผู้ใช้กรอกมา ---
         elif "otp_input" in request.form:
             if request.form['otp_input'] == session.get('otp'):
                 session['can_reset_password'] = True
+                flash("✅ ยืนยัน OTP สำเร็จ กรุณาตั้งรหัสผ่านใหม่", "success")
                 return redirect(url_for('forgot_password'))
-            flash("❌ OTP ไม่ถูกต้อง")
+            flash("❌ OTP ไม่ถูกต้อง", "danger")
+
+        # --- ส่วนที่ 3: เปลี่ยนรหัสผ่านใหม่ลงฐานข้อมูล ---
         elif "new_password" in request.form:
             new_p = request.form.get("new_password")
             if new_p == request.form.get("confirm_password"):
                 connect = sqlite3.connect(db_local)
                 cursor = connect.cursor()
-                cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", (new_p, session.get('reset_person_id')))
+                cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", 
+                               (new_p, session.get('reset_person_id')))
                 connect.commit()
                 connect.close()
                 session.clear()
-                flash("✅ เปลี่ยนรหัสผ่านสำเร็จ")
+                flash("✅ เปลี่ยนรหัสผ่านสำเร็จแล้ว!", "success")
                 return redirect(url_for('login'))
-            flash("❌ รหัสไม่ตรงกัน")
+            flash("❌ รหัสไม่ตรงกัน", "danger")
+
     return render_template('forgot_password.html', show_reset_form=show_reset_form)
 
 
