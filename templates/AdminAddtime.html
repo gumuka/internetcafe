@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
  <div class="min-h-screen bg-[#313647] flex items-center justify-center p-6 relative overflow-hidden">
@@ -23,11 +24,7 @@
 
       <input type="hidden" name="minutes" id="selectedMinutes" value="">
 
-      {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          <div class="mb-4 text-center text-red-500 font-bold text-lg">{{ messages[0] }}</div>
-        {% endif %}
-      {% endwith %}
+      
 
       <div class="grid grid-cols-3 gap-8 flex-grow items-center content-center">
         <div onclick="selectTime(30, this)" class="time-box border-4 border-gray-100 rounded-xl p-10 text-center hover:border-[#6B62C4] cursor-pointer transition-all shadow-sm">
@@ -97,5 +94,36 @@
     return true; // ยอมให้ฟอร์มทำงาน
   }
 </script>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<script>
+{% for category, message in messages %}
+
+{% if category == "success" %}
+Swal.fire({
+  icon: 'success',
+  title: 'สำเร็จ!',
+  text: 'เพิ่มเวลา {{ message }} สำเร็จแล้ว',
+  confirmButtonColor: '#6B62C4',
+  confirmButtonText: 'ตกลง'
+}).then(() => {
+  window.location.href = "{{ url_for('admin_home') }}";
+});
+
+{% endif %}
+
+{% if category == "error" %}
+Swal.fire({
+  icon: 'error',
+  title: 'ผิดพลาด!',
+  text: '{{ message }}'
+});
+{% endif %}
+
+{% endfor %}
+</script>
+{% endif %}
+{% endwith %}
 </body>
 </html>

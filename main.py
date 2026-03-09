@@ -332,23 +332,38 @@ def admin_home():
 @app.route("/admin_addtime", methods=["GET", "POST"])
 @login_required
 def admin_addtime():
-    if current_user.role != "Admin": return redirect(url_for("dashboard"))
+    if current_user.role != "Admin":
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         target_username = request.form.get("username")
         minutes = request.form.get("minutes")
+
         if target_username and minutes:
             seconds = int(minutes) * 60
+
             connect = sqlite3.connect(db_local)
             cursor = connect.cursor()
+
             cursor.execute("SELECT Person_ID FROM Person WHERE Username = ?", (target_username,))
             user = cursor.fetchone()
+
             if user:
-                cursor.execute("UPDATE Member SET Remaining_Time = Remaining_Time + ? WHERE Person_ID = ?", (seconds, user[0]))
+                cursor.execute(
+                    "UPDATE Member SET Remaining_Time = Remaining_Time + ? WHERE Person_ID = ?",
+                    (seconds, user[0])
+                )
                 connect.commit()
                 connect.close()
-                return render_template("AdminAddtimeComplete.html")
+
+                # ส่ง username ไปให้ SweetAlert
+                flash(target_username, "success")
+
+                return redirect(url_for("admin_addtime"))
+
             connect.close()
-            flash("❌ ไม่พบ Username นี้")
+            flash("ไม่พบ Username นี้", "error")
+
     return render_template("AdminAddtime.html")
 
 @app.route("/admin_register", methods=["GET", "POST"])
