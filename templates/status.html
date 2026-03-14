@@ -6,9 +6,9 @@
   <title>Computer Status Monitor</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-[#313647]">
 
-<div class="min-h-screen bg-[#313647] flex items-center justify-center p-6">
+<div class="min-h-screen flex items-center justify-center p-6">
   
   <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-[1200px] p-10">
     
@@ -22,25 +22,26 @@
 
     <div class="flex justify-center gap-8 mb-10 text-lg font-semibold">
       <span class="text-green-600">🟢 Online: {{ online }}</span>
-      <span class="text-yellow-500">🟡 In Use: {{ in_use }}</span>
-      <span class="text-red-600">🔴 Offline: {{ offline }}</span>
+      <span class="text-red-600">🔴 In Use: {{ in_use }}</span>
+      <span class="text-gray-500">⚪ Offline: {{ offline }}</span>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
       {% for row in computers %}
-        {# กำหนดค่าจาก Database: row[0]=ID, row[1]=Status, row[2]=Full_Name #}
-        {% set pc_id = row[0] %}
-        {% set pc_status = row[1] %}
-        {% set user_name = row[2] %} {# 🌟 ดึงชื่อจากลำดับที่ 3 ของ SQL JOIN #}
+        {# 🌟 แก้ไข: ใช้ชื่อคอลัมน์จาก SQL ตรงๆ ป้องกันการดึงข้อมูลผิดช่อง #}
+        {% set pc_ip = row['IP_Address'] %}
+        {% set pc_name = row['Computer_Name'] %}
+        {% set pc_status = row['Status'] %}
+        {% set user_name = row['Full_Name'] %}
         
-        {# Logic การเลือกสีตามสถานะ #}
+        {# 🌟 Logic การเลือกสี: กำหนดให้ In Use เป็นสีแดง #}
         {% if pc_status == 'Online' %}
             {% set bg, border, text_color = 'bg-green-100', 'border-green-500', 'text-green-600' %}
         {% elif pc_status == 'In Use' %}
-            {% set bg, border, text_color = 'bg-yellow-100', 'border-yellow-500', 'text-yellow-600' %}
-        {% else %}
             {% set bg, border, text_color = 'bg-red-100', 'border-red-500', 'text-red-600' %}
+        {% else %}
+            {% set bg, border, text_color = 'bg-gray-100', 'border-gray-500', 'text-gray-600' %}
         {% endif %}
 
         <div class="{{ bg }} border-4 {{ border }} rounded-2xl p-6 text-center shadow-lg hover:scale-105 transition flex flex-col items-center justify-center min-h-[180px]">
@@ -49,12 +50,15 @@
                 <path d="M3 4h18v12H3V4zm2 2v8h14V6H5zm4 12h6v2H9v-2z"/>
               </svg>
             </div>
-            <h2 class="text-xl font-bold text-gray-800">{{ pc_id }}</h2>
-            <p class="{{ text_color }} font-semibold">{{ pc_status }}</p>
+            
+            <h2 class="text-xl font-bold text-gray-800">{{ pc_name }}</h2>
+            <p class="text-xs text-gray-600 mb-2 font-mono">{{ pc_ip }}</p>
+            
+            <p class="{{ text_color }} font-bold uppercase tracking-wide">{{ pc_status }}</p>
 
-            {# 🌟 ส่วนที่เพิ่มใหม่: แสดงชื่อผู้ใช้งานเมื่อสถานะเป็น In Use #}
+            {# 🌟 แสดงชื่อผู้ใช้งานเมื่อสถานะเป็น In Use #}
             {% if pc_status == 'In Use' and user_name %}
-              <div class="mt-3 px-3 py-1 bg-white/60 border border-yellow-400 rounded-full text-xs font-bold text-yellow-800 shadow-sm">
+              <div class="mt-3 px-3 py-1 bg-white/90 border border-red-400 rounded-full text-xs font-bold text-red-800 shadow-sm">
                 👤 {{ user_name }}
               </div>
             {% endif %}

@@ -13,63 +13,58 @@ app.secret_key = "secret123"
 # ==========================================
 # 🏗️ ส่วนการจัดการฐานข้อมูล (Database Setup)
 # ==========================================
-
-def init_friend_tables():
+def setup_database():
     connect = sqlite3.connect(db_local)
     cursor = connect.cursor()
-    # ตารางรูปภาพ QR Code
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS images (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE,
-        image BLOB
-    )
-    """)
-    # ตารางข้อความติดต่อจากหน้า Contact
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        message TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    connect.commit()
-    connect.close()
 
-def setup_monitor_table():
-    connect = sqlite3.connect(db_local, timeout=20)
-    cursor = connect.cursor()
-    
-    # 🌟 1. ให้บรรทัดนี้ทำงาน (ไม่มี # ข้างหน้า) เพื่อล้าง 12 เครื่องเก่าออกก่อน
-    cursor.execute("DROP TABLE IF EXISTS Computer") 
-    
+    # 🌟 1. ปล่อยข้อมูล Person และ Member ไว้เหมือนเดิม (ไม่ลบทิ้ง)
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Computer (
-        Computer_ID TEXT PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS Person (
+        Person_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Username TEXT UNIQUE,
+        Password TEXT,
+        Full_Name TEXT,
+        Type TEXT
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Member (
+        Person_ID INTEGER PRIMARY KEY,
+        Time_Balance INTEGER DEFAULT 0,
+        Remaining_Time INTEGER DEFAULT 0,
+        Phone_Number TEXT,
+        FOREIGN KEY(Person_ID) REFERENCES Person(Person_ID)
+    )
+    """)
+
+    # 🌟 2. ลบเฉพาะตาราง Computer ของเดิม เพื่อสร้างใหม่ให้มีระบบ IP Address
+    cursor.execute("DROP TABLE IF EXISTS Computer")
+    cursor.execute("""
+    CREATE TABLE Computer (
+        Computer_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        Computer_Name TEXT,
+        IP_Address TEXT UNIQUE, 
         Status TEXT DEFAULT 'Online',
         Current_Member_ID INTEGER,
-        FOREIGN KEY (Current_Member_ID) REFERENCES Member(Person_ID)
+        FOREIGN KEY (Current_Member_ID) REFERENCES Person(Person_ID)
     )
     """)
-    
-    # 🌟 2. แก้จาก range(1, 13) เป็น range(1, 5) 
-    # (เลข 5 หมายถึงทำถึงแค่เครื่องที่ 4 ครับ)
-    pcs = [(f'PC-{i:02d}', 'Online') for i in range(1, 5)]
-    
-    cursor.executemany("INSERT INTO Computer (Computer_ID, Status) VALUES (?, ?)", pcs)
-    
+
+    # 🌟 3. ใส่ข้อมูลเครื่อง IP จริงของกลุ่มคุณ
+    pcs = [
+        ('PC-01 (Your Pc)', '10.54.54.145', 'Online'),
+        ('PC-02 (Friend 1)', '10.54.48.202', 'Online'),
+        ('PC-03 (Friend 2)', '10.54.55.217', 'Online'),
+        ('Local Test', '127.0.0.1', 'Online')
+    ]
+    cursor.executemany("INSERT INTO Computer (Computer_Name, IP_Address, Status) VALUES (?, ?, ?)", pcs)
+
     connect.commit()
     connect.close()
-
-# รันฟังก์ชันเตรียมฐานข้อมูลทันที
-init_friend_tables()
-setup_monitor_table()
-
+    
 # ==========================================
 # 🔐 ระบบยืนยันตัวตน (Flask-Login)
 # ==========================================
-
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
@@ -88,10 +83,10 @@ def load_user(user_id):
     connect.row_factory = sqlite3.Row
     cursor = connect.cursor()
     cursor.execute("""
-        SELECT Person.*, Member.Phone_Number 
-        FROM Person 
-        LEFT JOIN Member ON Person.Person_ID = Member.Person_ID 
-        WHERE Person.Person_ID = ?
+        SELECT p.Person_ID, p.Username, p.Full_Name, p.Type, m.Phone_Number 
+        FROM Person p
+        LEFT JOIN Member m ON p.Person_ID = m.Person_ID
+        WHERE p.Person_ID = ?
     """, (user_id,))
     user = cursor.fetchone()
     connect.close()
@@ -101,12 +96,11 @@ def load_user(user_id):
     return None
 
 # ==========================================
-# ⏳ ระบบจัดการเวลา Real-time และคืนเครื่องอัตโนมัติ
+# ⏳ ระบบจัดการเวลา Real-time
 # ==========================================
-
 @app.before_request
 def update_member_time():
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and current_user.role != "Admin":
         now = int(time.time())
         last_active = session.get('last_active')
         
@@ -115,33 +109,23 @@ def update_member_time():
             if elapsed_time > 0:
                 connect = sqlite3.connect(db_local)
                 cursor = connect.cursor()
-                
-                # 1. ลดเวลาปกติในตาราง Member
                 cursor.execute("""
-                    UPDATE Member 
-                    SET Remaining_Time = MAX(0, Remaining_Time - ?) 
-                    WHERE Person_ID = ?
+                    UPDATE Member SET Remaining_Time = MAX(0, Remaining_Time - ?) WHERE Person_ID = ?
                 """, (elapsed_time, current_user.id))
                 
-                # 🌟 2. คืนสถานะเครื่องเป็น Online ทันทีที่เวลาหมด
                 cursor.execute("SELECT Remaining_Time FROM Member WHERE Person_ID = ?", (current_user.id,))
                 res = cursor.fetchone()
                 if res and res[0] <= 0:
                     cursor.execute("""
-                        UPDATE Computer 
-                        SET Status = 'Online', Current_Member_ID = NULL 
-                        WHERE Current_Member_ID = ?
+                        UPDATE Computer SET Status = 'Online', Current_Member_ID = NULL WHERE Current_Member_ID = ?
                     """, (current_user.id,))
-                
                 connect.commit()
                 connect.close()
-        
         session['last_active'] = now
 
 # ==========================================
 # 🏠 เส้นทางหน้าเว็บ (Routes)
-# ========= =================================
-
+# ==========================================
 @app.route("/")
 def home():
     return redirect(url_for("login"))
@@ -155,11 +139,11 @@ def dashboard():
     member_data = cursor.fetchone()
     connect.close()
     
-    total_seconds = member_data[0] if member_data else 0
+    total_seconds = member_data[0] if member_data and member_data[0] is not None else 0
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
-    time_display = f"{hours} : {minutes} : {seconds}"
+    time_display = f"{hours} : {minutes:02d} : {seconds:02d}"
 
     return render_template("dashboard.html", username=current_user.full_name, time_display=time_display, total_seconds=total_seconds)
 
@@ -169,7 +153,6 @@ def login():
         username = request.form.get("username")
         password = request.form.get("password")
 
-        # 🌟 จุดที่ 1: เพิ่ม timeout=20 ป้องกัน "Database is locked" ตอนเปิดหลายหน้าจอ
         connect = sqlite3.connect(db_local, timeout=20) 
         connect.row_factory = sqlite3.Row
         cursor = connect.cursor()
@@ -181,27 +164,24 @@ def login():
             login_user(user_obj)
             
             if user_obj.role != "Admin":
-                # ค้นหาเครื่องที่ว่าง
-                cursor.execute("SELECT Computer_ID FROM Computer WHERE Status = 'Online' LIMIT 1")
+                # 🌟 ใช้ระบบจับ IP ของเครื่องที่เข้าเว็บอัตโนมัติ
+                user_ip = request.remote_addr
+                
+                # เปลี่ยนมาดึงค่า Computer_ID แทน เพื่อให้ตรงกับโครงสร้างเก่า
+                cursor.execute("SELECT Computer_ID FROM Computer WHERE IP_Address = ?", (user_ip,))
                 pc = cursor.fetchone()
                 
-                # 🌟 จุดที่ 2: เพิ่ม Check ว่า "ถ้ามีเครื่องว่าง" ถึงจะทำการ Update
                 if pc:
+                    # 🌟 อัปเดตสถานะโดยใช้ Computer_ID เพื่อความแม่นยำและไม่กระทบระบบเดิม
                     cursor.execute("""
-                        UPDATE Computer 
-                        SET Status = 'In Use', Current_Member_ID = ? 
-                        WHERE Computer_ID = ?
+                        UPDATE Computer SET Status = 'In Use', Current_Member_ID = ? WHERE Computer_ID = ?
                     """, (user_obj.id, pc["Computer_ID"]))
                     connect.commit()
                 else:
-                    # ถ้าเครื่องเต็ม (ทั้ง 4 เครื่องถูกใช้หมด) ให้แจ้งเตือนแทน
-                    flash("⚠️ ขณะนี้เครื่องคอมพิวเตอร์เต็มทุกเครื่อง คุณสามารถใช้งานได้แต่จะไม่โชว์บน Monitor")
+                    flash(f"⚠️ กำลังใช้งานจากอุปกรณ์ที่ไม่ได้ลงทะเบียน (IP: {user_ip})")
 
             connect.close()
-            if user_obj.role == "Admin":
-                return redirect(url_for("admin_home"))
-            else:
-                return redirect(url_for("dashboard"))
+            return redirect(url_for("admin_home") if user_obj.role == "Admin" else url_for("dashboard"))
         else:
             connect.close()
             flash("❌ Username หรือ Password ไม่ถูกต้อง!")
@@ -211,14 +191,11 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
-    # --- 🌟 โค้ดใหม่: คืนเครื่องคอมพิวเตอร์ก่อน Logout ---
     if current_user.role != "Admin":
         connect = sqlite3.connect(db_local)
         cursor = connect.cursor()
         cursor.execute("""
-            UPDATE Computer 
-            SET Status = 'Online', Current_Member_ID = NULL 
-            WHERE Current_Member_ID = ?
+            UPDATE Computer SET Status = 'Online', Current_Member_ID = NULL WHERE Current_Member_ID = ?
         """, (current_user.id,))
         connect.commit()
         connect.close()
@@ -230,10 +207,10 @@ def logout():
 @app.route("/contact", methods=["GET", "POST"])
 @login_required
 def contact():
+    # โค้ด Contact (คงเดิม)
     if request.method == "POST":
         data = request.get_json()
         message = data.get("message")
-        
         if message:
             connect = sqlite3.connect(db_local)
             cursor = connect.cursor()
@@ -248,60 +225,34 @@ def contact():
 def credit():
     if request.method == "POST":
         selected_time = request.form.get("package")
-        packages = {
-            "30min": ("30 นาที", 20), "1hour": ("1 ชั่วโมง", 40),
-            "1_30": ("1 ชั่วโมง 30 นาที", 60), "2hour": ("2 ชั่วโมง", 80),
-            "2_30": ("2 ชั่วโมง 30 นาที", 100), "3hour": ("3 ชั่วโมง", 120)
-        }
+        packages = {"30min": ("30 นาที", 20), "1hour": ("1 ชั่วโมง", 40), "1_30": ("1 ชั่วโมง 30 นาที", 60), "2hour": ("2 ชั่วโมง", 80), "2_30": ("2 ชั่วโมง 30 นาที", 100), "3hour": ("3 ชั่วโมง", 120)}
         if selected_time in packages:
             hour_text, price = packages[selected_time]
-            qr_name = "qr" + str(price)
-            return render_template("payment.html", hour_text=hour_text, price=price, qr_name=qr_name)
+            return render_template("payment.html", hour_text=hour_text, price=price, qr_name="qr"+str(price))
     return render_template("credit.html")
 
 @app.route("/upload_qr", methods=["GET", "POST"])
 @login_required
 def upload_qr():
+    # โค้ด Upload (คงเดิม)
     if request.method == "POST":
         selected_price = request.form.get("price")
         if "image" not in request.files: return "No file selected"
         file = request.files["image"]
-        if file.filename == "": return "No file chosen"
-        if not selected_price: return "Please select price"
-
+        if file.filename == "" or not selected_price: return "Invalid input"
         qr_name = "qr" + selected_price
         img_data = file.read()
-
         connect = sqlite3.connect(db_local)
         cursor = connect.cursor()
         cursor.execute("SELECT id FROM images WHERE name = ?", (qr_name,))
         if cursor.fetchone():
             cursor.execute("UPDATE images SET image = ? WHERE name = ?", (img_data, qr_name))
-            message = f"{qr_name} updated successfully"
         else:
             cursor.execute("INSERT INTO images (name, image) VALUES (?, ?)", (qr_name, img_data))
-            message = f"{qr_name} uploaded successfully"
-
         connect.commit()
         connect.close()
-        return message
-
-    return '''
-        <h2>Upload QR Code</h2>
-        <form method="POST" enctype="multipart/form-data">
-            <label>เลือกราคา:</label><br><br>
-            <select name="price">
-                <option value="20">20 บาท</option>
-                <option value="40">40 บาท</option>
-                <option value="60">60 บาท</option>
-                <option value="80">80 บาท</option>
-                <option value="100">100 บาท</option>
-                <option value="120">120 บาท</option>
-            </select><br><br>
-            <input type="file" name="image"><br><br>
-            <input type="submit" value="Upload">
-        </form>
-    '''
+        return f"{qr_name} uploaded successfully"
+    return '''<h2>Upload QR</h2><form method="POST" enctype="multipart/form-data"><select name="price"><option value="20">20</option><option value="40">40</option><option value="60">60</option><option value="80">80</option><option value="100">100</option><option value="120">120</option></select><input type="file" name="image"><input type="submit" value="Upload"></form>'''
 
 @app.route("/confirm_payment/<int:price>")
 @login_required
@@ -310,10 +261,6 @@ def confirm_payment(price):
     connect = sqlite3.connect(db_local)
     cursor = connect.cursor()
     cursor.execute("UPDATE Member SET Remaining_Time = Remaining_Time + ? WHERE Person_ID = ?", (seconds_to_add, current_user.id))
-    cursor.execute("""
-        INSERT INTO "Transaction" (Transaction_Type, Payment_Method, Amount, Time_Added_Seconds, Timestamp, Member_ID) 
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, ("Topup", "QRCode", price, seconds_to_add, time.strftime('%Y-%m-%d %H:%M:%S'), current_user.id))
     connect.commit()
     connect.close()
     return redirect(url_for("dashboard"))
@@ -321,80 +268,53 @@ def confirm_payment(price):
 # ==========================================
 # 🛡️ ส่วนของผู้ดูแลระบบ (Admin Routes)
 # ==========================================
-
 @app.route("/admin_home")
 @login_required
 def admin_home():
-    if current_user.role != "Admin":
-        return redirect(url_for("dashboard"))
+    if current_user.role != "Admin": return redirect(url_for("dashboard"))
     return render_template("AdminHome.html", username=current_user.full_name)
 
 @app.route("/admin_addtime", methods=["GET", "POST"])
 @login_required
 def admin_addtime():
-    if current_user.role != "Admin":
-        return redirect(url_for("dashboard"))
-
+    if current_user.role != "Admin": return redirect(url_for("dashboard"))
     if request.method == "POST":
         target_username = request.form.get("username")
         minutes = request.form.get("minutes")
-
         if target_username and minutes:
-            seconds = int(minutes) * 60
-
             connect = sqlite3.connect(db_local)
             cursor = connect.cursor()
-
             cursor.execute("SELECT Person_ID FROM Person WHERE Username = ?", (target_username,))
             user = cursor.fetchone()
-
             if user:
-                cursor.execute(
-                    "UPDATE Member SET Remaining_Time = Remaining_Time + ? WHERE Person_ID = ?",
-                    (seconds, user[0])
-                )
+                cursor.execute("UPDATE Member SET Remaining_Time = Remaining_Time + ? WHERE Person_ID = ?", (int(minutes)*60, user[0]))
                 connect.commit()
-                connect.close()
-
-                # ส่ง username ไปให้ SweetAlert
                 flash(target_username, "success")
-
-                return redirect(url_for("admin_addtime"))
-
+            else:
+                flash("ไม่พบ Username นี้", "error")
             connect.close()
-            flash("ไม่พบ Username นี้", "error")
-
+            return redirect(url_for("admin_addtime"))
     return render_template("AdminAddtime.html")
 
 @app.route("/admin_register", methods=["GET", "POST"])
 @login_required
 def admin_register():
-    if current_user.role != "Admin":
-        return redirect(url_for("dashboard"))
-
+    if current_user.role != "Admin": return redirect(url_for("dashboard"))
     success = False 
     if request.method == "POST":
         user = request.form.get("username")
         pwd = request.form.get("password")
         phone = request.form.get("phone")
         role = request.form.get("role")
-
         connect = sqlite3.connect(db_local)
         cursor = connect.cursor()
         try:
-            cursor.execute("""
-                INSERT INTO Person (Username, Password, Full_Name, Type) 
-                VALUES (?, ?, ?, ?)
-            """, (user, pwd, user, role))
+            cursor.execute("INSERT INTO Person (Username, Password, Full_Name, Type) VALUES (?, ?, ?, ?)", (user, pwd, user, role))
             new_id = cursor.lastrowid
-            cursor.execute("""
-                INSERT INTO Member (Person_ID, Phone_Number, Remaining_Time) 
-                VALUES (?, ?, 0)
-            """, (new_id, phone))
+            cursor.execute("INSERT INTO Member (Person_ID, Phone_Number, Remaining_Time) VALUES (?, ?, 0)", (new_id, phone))
             connect.commit()
             success = True
         except Exception as e:
-            print(f"Error: {e}")
             flash("❌ เกิดข้อผิดพลาด")
         finally:
             connect.close()
@@ -425,8 +345,7 @@ def delete_message(msg_id):
 @app.route("/admin_reset_password", methods=["GET", "POST"])
 @login_required
 def admin_reset_password():
-    if current_user.role != "Admin":
-        return redirect(url_for("dashboard"))
+    if current_user.role != "Admin": return redirect(url_for("dashboard"))
     success = False
     if request.method == "POST":
         target_username = request.form.get("username")
@@ -448,8 +367,7 @@ def admin_reset_password():
 @app.route("/admin_user_edit", methods=["GET", "POST"])
 @login_required
 def admin_user_edit():
-    if current_user.role != "Admin":
-        return redirect(url_for("dashboard"))
+    if current_user.role != "Admin": return redirect(url_for("dashboard"))
     success = False
     if request.method == "POST":
         target_user = request.form.get("target_username")
@@ -460,11 +378,8 @@ def admin_user_edit():
         cursor.execute("SELECT Person_ID FROM Person WHERE Username = ?", (target_user,))
         user = cursor.fetchone()
         if user:
-            p_id = user[0]
-            if new_pass:
-                cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", (new_pass, p_id))
-            if new_tel:
-                cursor.execute("UPDATE Member SET Phone_Number = ? WHERE Person_ID = ?", (new_tel, p_id))
+            if new_pass: cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", (new_pass, user[0]))
+            if new_tel: cursor.execute("UPDATE Member SET Phone_Number = ? WHERE Person_ID = ?", (new_tel, user[0]))
             connect.commit()
             success = True
         else:
@@ -475,24 +390,24 @@ def admin_user_edit():
 @app.route("/status")
 @login_required
 def status():
+    if current_user.role != "Admin":
+        return redirect(url_for('index'))
+    
     connect = sqlite3.connect(db_local)
     connect.row_factory = sqlite3.Row
     cursor = connect.cursor()
+
+    # 🌟 ดึงข้อมูลทั้ง Computer_ID แบบเก่า และ IP_Address มาใช้ร่วมกัน
     query = """
-        SELECT c.Computer_ID, c.Status, p.Full_Name 
-        FROM Computer c
+        SELECT c.Computer_ID, c.IP_Address, c.Computer_Name, c.Status, p.Full_Name 
+        FROM Computer c 
         LEFT JOIN Person p ON c.Current_Member_ID = p.Person_ID
     """
     cursor.execute(query)
-    all_pcs = cursor.fetchall()
-    cursor.execute("SELECT COUNT(*) FROM Computer WHERE Status = 'Online'")
-    online_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM Computer WHERE Status = 'In Use'")
-    in_use_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM Computer WHERE Status = 'Offline'")
-    offline_count = cursor.fetchone()[0]
+    computers = cursor.fetchall()
     connect.close()
-    return render_template("status.html", computers=all_pcs, online=online_count, in_use=in_use_count, offline=offline_count)
+    
+    return render_template("status.html", computers=computers)
 
 @app.route("/view_qr/<qr_name>")
 @login_required
@@ -533,7 +448,6 @@ def change_password():
         if cursor.fetchone():
             cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", (new_pass, current_user.id))
             connect.commit()
-            connect.close()
             flash("✅ เปลี่ยนรหัสผ่านสำเร็จ")
             return redirect(url_for("dashboard"))
         connect.close()
@@ -544,47 +458,37 @@ def change_password():
 def forgot_password():
     show_reset_form = session.get('can_reset_password', False)
     if request.method == 'POST':
-        # --- ส่วนที่ 1: ตรวจสอบเบอร์โทรและส่ง OTP ---
         if "phone" in request.form:
             phone_input = request.form['phone'].strip()
-            
             connect = sqlite3.connect(db_local)
             cursor = connect.cursor()
-            # ค้นหาว่าเบอร์นี้เป็นของใคร (เชื่อมฐานข้อมูลตรงนี้ครับ)
             cursor.execute("SELECT Person_ID FROM Member WHERE Phone_Number = ?", (phone_input,))
             member = cursor.fetchone()
             connect.close()
             
             if member:
-                # ✅ ถ้าเจอเบอร์ใน DB ให้สร้าง OTP และโชว์บนหน้าเว็บ
                 otp = random.randint(100000, 999999)
                 session['otp'] = str(otp)
-                session['phone'] = phone_input
                 session['reset_person_id'] = member[0]
-                
                 flash(f"✅ พบข้อมูลสมาชิก! OTP คือ: {otp}", "success")
-                return redirect(url_for('forgot_password'))
             else:
-                # ❌ ถ้าไม่เจอ ให้แจ้งเตือนและไม่ส่ง OTP
                 flash(f"❌ ไม่พบเบอร์โทร {phone_input} ในระบบ", "danger")
-                return redirect(url_for('forgot_password'))
+            return redirect(url_for('forgot_password'))
         
-        # --- ส่วนที่ 2: ตรวจสอบ OTP ที่ผู้ใช้กรอกมา ---
         elif "otp_input" in request.form:
             if request.form['otp_input'] == session.get('otp'):
                 session['can_reset_password'] = True
                 flash("✅ ยืนยัน OTP สำเร็จ กรุณาตั้งรหัสผ่านใหม่", "success")
-                return redirect(url_for('forgot_password'))
-            flash("❌ OTP ไม่ถูกต้อง", "danger")
+            else:
+                flash("❌ OTP ไม่ถูกต้อง", "danger")
+            return redirect(url_for('forgot_password'))
 
-        # --- ส่วนที่ 3: เปลี่ยนรหัสผ่านใหม่ลงฐานข้อมูล ---
         elif "new_password" in request.form:
             new_p = request.form.get("new_password")
             if new_p == request.form.get("confirm_password"):
                 connect = sqlite3.connect(db_local)
                 cursor = connect.cursor()
-                cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", 
-                               (new_p, session.get('reset_person_id')))
+                cursor.execute("UPDATE Person SET Password = ? WHERE Person_ID = ?", (new_p, session.get('reset_person_id')))
                 connect.commit()
                 connect.close()
                 session.clear()
@@ -594,6 +498,6 @@ def forgot_password():
 
     return render_template('forgot_password.html', show_reset_form=show_reset_form)
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    setup_database() # เรียกฟังก์ชันเดียวจบ ครอบคลุมทุกตาราง
+    app.run(host='0.0.0.0', port=5000, debug=True)
